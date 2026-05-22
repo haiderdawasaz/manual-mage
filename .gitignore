@@ -79,3 +79,4 @@ backend/README.md
 **.yaml
 frontend/.vscode
 frontend/.angular
+frontend/environment
