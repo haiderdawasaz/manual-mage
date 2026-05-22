@@ -1,0 +1,19 @@
+# Dependency directories
+node_modules/
+.angular/
+
+# Build artifacts
+dist/
+
+# Version control
+.git/
+.gitignore
+
+# Editor/OS specific
+.vscode/
+.editorconfig
+README.md
+
+# Firebase (since you are deploying to Cloud Run, not Firebase Hosting)
+firebase.json
+.firebase/

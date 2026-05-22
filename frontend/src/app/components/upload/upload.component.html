@@ -1,0 +1,200 @@
+<!-- frontend/src/app/components/upload/upload.component.html -->
+<div class="max-w-2xl mx-auto">
+
+  <!-- Page heading -->
+  <div class="mb-5">
+    <h2 class="text-2xl font-semibold text-white tracking-tight">Generate a User Manual</h2>
+    <p class="text-sm text-gray-400 mt-1">
+      Upload a screen recording and let ManualMage do the heavy lifting.
+    </p>
+  </div>
+
+  <!-- Session resumption banner -->
+  @if (pendingJob()) {
+  <div class="mb-6 flex items-start gap-3 bg-indigo-950/50 border border-indigo-800/60 rounded-xl p-4">
+    <svg class="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+      stroke-width="1.5">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+    </svg>
+    <div class="flex-1 min-w-0">
+      <p class="text-sm font-medium text-indigo-300">You have a job in progress</p>
+      <p class="text-xs text-indigo-400/70 mt-0.5 truncate">{{ pendingJob()?.videoFileName }}</p>
+      <div class="flex gap-3 mt-3">
+        <button (click)="resumePendingJob()"
+          class="text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded-lg transition-colors"
+          [disabled]="isDismissing()">
+          Resume
+        </button>
+        <button (click)="dismissPendingJob()" [disabled]="isDismissing()"
+          class="text-xs font-medium text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
+          @if (isDismissing()) {
+            <span class="w-3 h-3 border border-gray-500 border-t-transparent rounded-full animate-spin"></span>
+            Cancelling…
+          } @else {
+            Dismiss
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Drop zone -->
+  @if (uploadState() !== 'uploading') {
+  <div (dragover)="onDragOver($event)" (dragleave)="onDragLeave()" (drop)="onDrop($event)"
+    [ngClass]="isDragOver() ? 'border-indigo-500' : 'bg-indigo-950/20'"
+    class="border-2 border-dashed border-gray-700 rounded-2xl p-10 text-center transition-all cursor-pointer hover:border-gray-600 hover:bg-gray-900/40"
+    (click)="fileInput.click()">
+
+    <input #fileInput type="file" [accept]="acceptedExtensions" (change)="onFileInput($event)" class="hidden" />
+
+    @if (!selectedFile()) {
+    <!-- Empty state -->
+    <div class="flex flex-col items-center gap-3">
+      <div class="w-14 h-14 rounded-2xl bg-gray-800 border border-gray-700 flex items-center justify-center">
+        <svg class="w-7 h-7 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+        </svg>
+      </div>
+      <div>
+        <p class="text-sm font-medium text-gray-300">
+          Drop your video here, or <span class="text-indigo-400">browse</span>
+        </p>
+        <p class="text-xs text-gray-600 mt-1">MP4, MOV, AVI, WebM · Max 5 Minutes</p>
+      </div>
+    </div>
+    } @else {
+    <!-- File selected -->
+    <div class="flex items-center gap-4 text-left" (click)="$event.stopPropagation()">
+      <div
+        class="w-12 h-12 rounded-xl bg-indigo-900/50 border border-indigo-800/60 flex items-center justify-center flex-shrink-0">
+        <svg class="w-6 h-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+        </svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium text-white truncate">{{ selectedFile()?.name }}</p>
+        <p class="text-xs text-gray-500 mt-0.5">{{ formatFileSize(selectedFile()?.size ?? 0) }}</p>
+      </div>
+      <button (click)="clearFile(); $event.stopPropagation()"
+        class="text-gray-600 hover:text-gray-400 transition-colors p-1 flex-shrink-0">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    }
+  </div>
+
+  <!-- Error message -->
+  @if (errorMessage()) {
+  <div class="mt-4 flex items-start gap-2 bg-red-950/50 border border-red-900/60 rounded-lg px-3 py-2.5">
+    <svg class="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+      stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+    </svg>
+    <p class="text-xs text-red-400">{{ errorMessage() }}</p>
+  </div>
+  }
+
+  <!-- Upload button -->
+  <button (click)="startUpload()" [disabled]="!selectedFile()"
+    class="mt-6 w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white font-medium py-3 rounded-xl transition-all text-sm">
+    Generate User Manual
+  </button>
+
+  <!-- AI Warning -->
+  <div class="mt-6 flex items-start gap-3 bg-amber-950/20 border border-amber-900/40 rounded-xl p-4">
+    <svg class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+      stroke-width="1.5">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+    </svg>
+    <p class="text-xs text-amber-200/70 leading-relaxed">
+      <strong class="text-amber-400 block mb-1">AI-Powered Conversion</strong>
+      ManualMage is powered by AI, which can occasionally make errors. We provide a DOCX file so you can easily review
+      and adjust the steps to perfection.
+    </p>
+  </div>
+
+  } @else {
+
+  <!-- Uploading state -->
+  <div class="border border-gray-800 rounded-2xl p-8 bg-gray-900/40">
+    <div class="flex items-center gap-3 mb-5">
+      <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin flex-shrink-0">
+      </div>
+      <div>
+        <p class="text-sm font-medium text-white">Uploading video…</p>
+        <p class="text-xs text-gray-500 truncate mt-0.5">{{ selectedFile()?.name }}</p>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="w-full bg-gray-800 rounded-full h-1.5">
+      <div class="bg-indigo-500 h-1.5 rounded-full transition-all duration-300" [style.width.%]="uploadProgress()">
+      </div>
+    </div>
+    <p class="text-xs text-gray-600 mt-2 text-right">{{ uploadProgress() }}%</p>
+  </div>
+
+  }
+
+  <!-- Format info -->
+  <div class="my-8 grid grid-cols-3 gap-3">
+    @for (item of infoItems; track item.label) {
+    <div class="bg-gray-900/40 border border-gray-800 rounded-xl p-3 text-center">
+      <p class="text-xs font-medium text-gray-300">{{ item.label }}</p>
+      <p class="text-xs text-gray-600 mt-0.5">{{ item.value }}</p>
+    </div>
+    }
+  </div>
+
+  <div class="mb-3">
+    <h2 class="text-2xl font-semibold text-white tracking-tight">How It Works:</h2>
+  </div>
+
+  <!-- Steps Section -->
+  <div class="mb-10 grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="flex gap-4 p-4 rounded-2xl bg-gray-900/40 border border-gray-800">
+      <div
+        class="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-semibold text-sm flex-shrink-0">
+        1</div>
+      <div>
+        <h3 class="text-sm font-medium text-white">Upload Video</h3>
+        <p class="text-xs text-gray-500 mt-0.5">Select your tutorial or screen recording (max 5 min).</p>
+      </div>
+    </div>
+    <div class="flex gap-4 p-4 rounded-2xl bg-gray-900/40 border border-gray-800">
+      <div
+        class="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-semibold text-sm flex-shrink-0">
+        2</div>
+      <div>
+        <h3 class="text-sm font-medium text-white">AI Analysis</h3>
+        <p class="text-xs text-gray-500 mt-0.5">ManualMage extracts steps, transcribes audio, and identifies actions.
+        </p>
+      </div>
+    </div>
+    <div class="flex gap-4 p-4 rounded-2xl bg-gray-900/40 border border-gray-800">
+      <div
+        class="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-semibold text-sm flex-shrink-0">
+        3</div>
+      <div>
+        <h3 class="text-sm font-medium text-white">Step Extraction</h3>
+        <p class="text-xs text-gray-500 mt-0.5">Key moments are captured with descriptions automatically.</p>
+      </div>
+    </div>
+    <div class="flex gap-4 p-4 rounded-2xl bg-gray-900/40 border border-gray-800">
+      <div
+        class="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-semibold text-sm flex-shrink-0">
+        4</div>
+      <div>
+        <h3 class="text-sm font-medium text-white">Download DOCX</h3>
+        <p class="text-xs text-gray-500 mt-0.5">Get your editable manual and make final adjustments.</p>
+      </div>
+    </div>
+  </div>
+</div>

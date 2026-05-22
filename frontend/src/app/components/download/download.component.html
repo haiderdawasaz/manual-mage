@@ -1,0 +1,177 @@
+<!-- frontend/src/app/components/download/download.component.html -->
+<div class="max-w-xl mx-auto">
+
+  <!-- Loading -->
+  @if (pageState() === 'loading') {
+    <div class="flex items-center justify-center min-h-[40vh]">
+      <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  }
+
+  <!-- Ready to download -->
+  @if (pageState() === 'ready') {
+    <div>
+      <!-- Header -->
+      <div class="mb-8">
+        <h2 class="text-2xl font-semibold text-white tracking-tight">Your manual is ready</h2>
+        <p class="text-sm text-gray-500 mt-1">
+          Download your editable DOCX below. The link expires in
+          <span
+            class="font-medium tabular-nums"
+            [class.text-amber-400]="expiryUrgent()"
+            [class.text-gray-400]="!expiryUrgent()">
+            {{ minutesRemaining() }}
+          </span>.
+        </p>
+      </div>
+
+      <!-- Download card -->
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-4">
+
+        <!-- File info row -->
+        <div class="flex items-center gap-4 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-indigo-900/40 border border-indigo-800/60
+                      flex items-center justify-center flex-shrink-0">
+            <svg class="w-6 h-6 text-indigo-400" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1
+                   13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5
+                   3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504
+                   1.125 1.125 1.125h12.75c.621 0 1.125-.504
+                   1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-white truncate">
+              {{ videoFileName() }}_manual.docx
+            </p>
+            <p class="text-xs text-gray-500 mt-0.5">
+              Microsoft Word · Editable · Google Docs compatible
+            </p>
+          </div>
+        </div>
+
+        <!-- Download button -->
+        <button
+          (click)="triggerDownload()"
+          [disabled]="isDownloading()"
+          class="w-full flex items-center justify-center gap-2 bg-indigo-600
+                 hover:bg-indigo-500 disabled:bg-indigo-900 disabled:text-indigo-700
+                 disabled:cursor-not-allowed text-white font-medium py-3 rounded-xl
+                 transition-all text-sm">
+          @if (isDownloading()) {
+            <div class="w-4 h-4 border-2 border-indigo-400 border-t-transparent
+                        rounded-full animate-spin"></div>
+            Preparing download…
+          } @else {
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0
+                   21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            Download DOCX
+          }
+        </button>
+
+        <!-- Download error -->
+        @if (downloadError()) {
+          <div class="mt-3 flex items-start gap-2 bg-red-950/50 border
+                      border-red-900/60 rounded-lg px-3 py-2.5">
+            <svg class="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948
+                   3.374h14.71c1.73 0 2.813-1.874
+                   1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898
+                   0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+            </svg>
+            <p class="text-xs text-red-400">{{ downloadError() }}</p>
+          </div>
+        }
+      </div>
+
+      <!-- Expiry countdown bar -->
+      <div class="bg-gray-900/40 border border-gray-800 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-xs text-gray-500">Download window</p>
+          <p class="text-xs tabular-nums font-medium"
+             [class.text-amber-400]="expiryUrgent()"
+             [class.text-gray-400]="!expiryUrgent()">
+            {{ minutesRemaining() }} remaining
+          </p>
+        </div>
+        <div class="w-full bg-gray-800 rounded-full h-1">
+          <div
+            class="h-1 rounded-full transition-all duration-1000"
+            [class.bg-indigo-500]="!expiryUrgent()"
+            [class.bg-amber-500]="expiryUrgent()"
+            [style.width.%]="(secondsRemaining() / 600) * 100">
+          </div>
+        </div>
+      </div>
+
+      <!-- Start over link -->
+      <div class="text-center mt-6">
+        <button
+          (click)="startOver()"
+          class="text-xs text-gray-600 hover:text-gray-400 transition-colors">
+          Process another video
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Expired -->
+  @if (pageState() === 'expired') {
+    <div class="text-center py-16">
+      <div class="w-14 h-14 rounded-full bg-gray-800 border border-gray-700
+                  flex items-center justify-center mx-auto mb-5">
+        <svg class="w-7 h-7 text-gray-500" fill="none" viewBox="0 0 24 24"
+             stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+        </svg>
+      </div>
+      <h2 class="text-lg font-semibold text-white mb-2">Download window has passed</h2>
+      <p class="text-sm text-gray-500 mb-8 max-w-xs mx-auto">
+        Your document has been deleted from our servers. Please upload your video again to generate a new manual.
+      </p>
+      <button
+        (click)="startOver()"
+        class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium
+               px-6 py-2.5 rounded-xl transition-colors">
+        Upload again
+      </button>
+    </div>
+  }
+
+  <!-- Error -->
+  @if (pageState() === 'error') {
+    <div class="text-center py-16">
+      <div class="w-14 h-14 rounded-full bg-red-950/40 border border-red-900/60
+                  flex items-center justify-center mx-auto mb-5">
+        <svg class="w-7 h-7 text-red-400" fill="none" viewBox="0 0 24 24"
+             stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948
+               3.374h14.71c1.73 0 2.813-1.874
+               1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898
+               0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+        </svg>
+      </div>
+      <h2 class="text-lg font-semibold text-white mb-2">Something went wrong</h2>
+      <p class="text-sm text-gray-500 mb-8 max-w-xs mx-auto">
+        We couldn't find your document. It may have already expired or been deleted.
+      </p>
+      <button
+        (click)="startOver()"
+        class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium
+               px-6 py-2.5 rounded-xl transition-colors">
+        Start over
+      </button>
+    </div>
+  }
+
+</div>
